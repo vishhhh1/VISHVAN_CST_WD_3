@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Enhanced Colored To-Do App</title>
+  <style>
+    /* Gradient background with smooth transitions */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      margin: 40px;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .new-task-form {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 15px;
+    }
+
+    .new-task-form input,
+    .new-task-form button {
+      padding: 8px;
+      font-size: 1rem;
+    }
+
+    .new-task-form input {
+      flex: 1;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .new-task-form button {
+      background: #66a6ff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .new-task-form button:hover {
+      background: #89f7fe;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      background: #fff;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .task-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .task-details.completed .task-text {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    .task-details small {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .task-actions button {
+      margin-left: 5px;
+      border: none;
+      padding: 6px 8px;
+      font-size: 0.9rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .task-actions button:hover {
+      opacity: 0.8;
+    }
+
+    .complete-btn {
+      background: #4caf50;
+      color: white;
+    }
+
+    .edit-btn {
+      background: #ff9800;
+      color: white;
+    }
+
+    .delete-btn {
+      background: #f44336;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Colorful To-Do App</h1>
+    <div class="new-task-form">
+      <input type="text" id="taskInput" placeholder="Task description">
+      <input type="date" id="dueDate">
+      <input type="time" id="dueTime">
+      <button id="addBtn">Add Task</button>
+    </div>
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    const taskInput = document.getElementById('taskInput');
+    const dueDate = document.getElementById('dueDate');
+    const dueTime = document.getElementById('dueTime');
+    const addBtn = document.getElementById('addBtn');
+    const taskList = document.getElementById('taskList');
+
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    function saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = '';
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = 'task-item';
+
+        const details = document.createElement('div');
+        details.className = 'task-details' + (task.completed ? ' completed' : '');
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'task-text';
+        textSpan.textContent = task.text;
+
+        const dueInfo = document.createElement('small');
+        dueInfo.textContent = `${task.dueDate || ''} ${task.dueTime || ''}`.trim();
+
+        details.append(textSpan, dueInfo);
+
+        const actions = document.createElement('div');
+        actions.className = 'task-actions';
+
+        const completeBtn = document.createElement('button');
+        completeBtn.className = 'complete-btn';
+        completeBtn.textContent = task.completed ? 'Unmark' : 'Complete';
+        completeBtn.onclick = () => {
+          task.completed = !task.completed;
+          saveTasks();
+          renderTasks();
+        };
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'edit-btn';
+        editBtn.textContent = 'Edit';
+        editBtn.onclick = () => {
+          const newText = prompt('Edit task:', task.text);
+          if (newText !== null) {
+            task.text = newText;
+            const newDue = prompt('Edit due date (YYYY-MM-DD):', task.dueDate) || task.dueDate;
+            const newTime = prompt('Edit due time (HH:MM):', task.dueTime) || task.dueTime;
+            task.dueDate = newDue;
+            task.dueTime = newTime;
+            saveTasks();
+            renderTasks();
+          }
+        };
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = () => {
+          tasks = tasks.filter(t => t.id !== task.id);
+          saveTasks();
+          renderTasks();
+        };
+
+        actions.append(completeBtn, editBtn, deleteBtn);
+        li.append(details, actions);
+        taskList.appendChild(li);
+      });
+    }
+
+    addBtn.onclick = () => {
+      const text = taskInput.value.trim();
+      if (!text) return;
+      const newTask = {
+        id: Date.now(),
+        text,
+        dueDate: dueDate.value,
+        dueTime: dueTime.value,
+        completed: false
+      };
+      tasks.push(newTask);
+      saveTasks();
+      renderTasks();
+      taskInput.value = '';
+      dueDate.value = '';
+      dueTime.value = '';
+    };
+
+    window.addEventListener('DOMContentLoaded', renderTasks);
+  </script>
+</body>
+</html>
